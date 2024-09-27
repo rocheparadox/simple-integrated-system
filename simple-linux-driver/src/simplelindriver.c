@@ -13,7 +13,7 @@ MODULE_AUTHOR("Roche Christopher");
 
 
 /* I2C details */
-#define ARM_I2C_ADDRESS 0x30 // TODO: Should be changed later
+#define ARM_I2C_ADDRESS 0x10 // TODO: Should be changed later
 #define ARM_I2C_SLAVE_NAME "ARM I2C DEVICE"
 
 /* Define the I2C device details */
@@ -57,6 +57,7 @@ int init_arm_i2c_device(void){
 	    i2c_put_adapter(arm_i2c_adapter); 
 	    return -1;
     }
+    printk(KERN_INFO "I2C client is %d", arm_i2c_client->addr);
     
     /* Add the i2c driver to the system */
     if(i2c_add_driver(&arm_i2c_driver) != -1){
@@ -73,7 +74,8 @@ int init_arm_i2c_device(void){
 void arm_i2c_device_cleanup(void){
 	if(arm_i2c_device_registered){
 		printk(KERN_INFO "Going to delete the driver %s\n", ARM_I2C_SLAVE_NAME);
-		i2c_del_driver(&arm_i2c_driver);	
+		i2c_del_driver(&arm_i2c_driver);
+		i2c_unregister_device(arm_i2c_client);	
 	}
 }
 
@@ -82,12 +84,28 @@ void arm_i2c_device_cleanup(void){
 
 /* This method gets called when something is written to this device*/
 ssize_t driver_write(struct file *filep, const char __user *buff, size_t count, loff_t *offp){
-    printk("The following was written to the device : ");
+    //printk("The following was written to the device : ");
+    const uint8_t max_input_count = 4; // 3 digits + 1 null character 
+    char copied_data[max_input_count];
+    if(count > max_input_count)
+	    count = max_input_count; // copy only first five characters from the userspace buffer
+    copy_from_user(copied_data, buff, count); // data from the userspace should not be dereferenced in the kernel space. 
+    uint8_t frequency2send = 0;   
     for(int i=0; i<count; i++){
-    	printk(KERN_CONT "%c", buff[i]); 
-    }   
-   printk("\n");
-  return count; 
+	if(!(copied_data[i] >= '0' && copied_data[i] <= '9'))
+		break;
+    	frequency2send = (10*frequency2send + (copied_data[i] - '0'));	
+	//printk(KERN_INFO "%c %u", copied_data[i], frequency2send); 
+    } 
+   // uint8_t data2send = frequency2send; 
+   //printk(KERN_INFO "The data to be sent to the device is %u", frequency2send); 
+   //printk("\n");
+   //printk(KERN_INFO "The amount of data to be sent is %d", count);
+   int sent_data_count = i2c_master_send(arm_i2c_client , &frequency2send, 1);
+   if(sent_data_count == 1){
+	  printk(KERN_INFO "Data communicated successfully through I2C, number of bytes sent %d and the data sent is %u \n", sent_data_count, frequency2send);
+   }
+   return count; 
 }
 
 /* This method gets called when the device is opened */
