@@ -108,8 +108,6 @@ extern void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *hi2c){
 	UART_Print(i2c_rx_buffer[0]);
 	UART_Print("\n");
 
-	HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
-
 	target_frequency = received_number;
 	timer_period = (HAL_RCC_GetHCLKFreq()/(prescaler * target_frequency*2)) - 1;
 	timer2.Instance->CNT = 0; // reset the value of the counter
