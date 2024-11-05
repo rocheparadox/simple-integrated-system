@@ -4,6 +4,8 @@
 #include<linux/cdev.h>
 #include<linux/i2c.h>
 
+#include "commons.h"
+
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Roche Christopher");
 
@@ -38,6 +40,17 @@ int device_count = 1;
 char* device_name = "simple_linux_driver";
 
 struct cdev simple_char_device;
+
+/* Custom Functions */
+
+
+int send_payload(Payload *payload){
+    char buff[2];
+    buff[0] = payload->device_type;
+    buff[1] = payload->data;
+    int count = i2c_master_send(arm_i2c_client, buff, 2);
+    return count;
+}
 
 /* I2C device initialization function */
 
@@ -85,27 +98,25 @@ void arm_i2c_device_cleanup(void){
 /* This method gets called when something is written to this device*/
 ssize_t driver_write(struct file *filep, const char __user *buff, size_t count, loff_t *offp){
     //printk("The following was written to the device : ");
-    const uint8_t max_input_count = 4; // 3 digits + 1 null character 
+    
+    // For demo 2, the input would be of format device:char data:char[3]
+
+    const uint8_t max_input_count = 1+1+3+1; // 1 device character + 1 space + 3 digits + 1 null character 
     char copied_data[max_input_count];
     if(count > max_input_count)
-	    count = max_input_count; // copy only first five characters from the userspace buffer
+	    count = max_input_count; // copy only the required data 
     copy_from_user(copied_data, buff, count); // data from the userspace should not be dereferenced in the kernel space. 
-    uint8_t frequency2send = 0;   
-    for(int i=0; i<count; i++){
-	if(!(copied_data[i] >= '0' && copied_data[i] <= '9'))
-		break;
-    	frequency2send = (10*frequency2send + (copied_data[i] - '0'));	
-	//printk(KERN_INFO "%c %u", copied_data[i], frequency2send); 
-    } 
    // uint8_t data2send = frequency2send; 
    //printk(KERN_INFO "The data to be sent to the device is %u", frequency2send); 
    //printk("\n");
    //printk(KERN_INFO "The amount of data to be sent is %d", count);
-   int sent_data_count = i2c_master_send(arm_i2c_client , &frequency2send, 1);
-   if(sent_data_count == 1){
-	  printk(KERN_INFO "Data communicated successfully through I2C, number of bytes sent %d and the data sent is %u \n", sent_data_count, frequency2send);
-   }
-   return count; 
+    // parse the input into Payload struct
+    
+    Payload payload;
+    parse_input(copied_data, &payload, count);
+    count = send_payload(&payload);
+
+  return count; 
 }
 
 /* This method gets called when the device is opened */
