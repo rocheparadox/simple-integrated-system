@@ -7,7 +7,7 @@ if [ -z $1 ]; then
 fi
 
 modulename=simplelindriver
-devicename=/dev/simplelinuxdevice1 
+devicename=/dev/stm32 
 owner=paradox
 group=greenhawk
 
