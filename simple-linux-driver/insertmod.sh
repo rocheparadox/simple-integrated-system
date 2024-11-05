@@ -8,7 +8,8 @@ fi
 
 modulename=simplelindriver
 devicename=/dev/simplelinuxdevice1 
-owner=whiterose
+owner=paradox
+group=greenhawk
 
 if lsmod | grep -q "^$modulename"; then
     echo "Module $modulename already exists. So, removing it."
@@ -16,7 +17,7 @@ if lsmod | grep -q "^$modulename"; then
 fi
 
 echo "Inserting module"
-insmod src/$modulename.ko
+insmod $modulename.ko
 
 if [ -c $devicename ]; then
 	echo "File $devicename exists. So going to delete it"
