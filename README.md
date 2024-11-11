@@ -7,6 +7,7 @@ A video demonstration can be found in [youtube](https://youtu.be/1-XOoO1cjXc?si=
 
 ## Demo 2
 An article pertinent to Demo 2 can be found in [this Medium article](https://medium.com/@rocheinside/sending-a-struct-using-i2c-979f05dc8a5b)
+
 A video demonstration can be found in [youtube](https://www.youtube.com/watch?v=W_JbGLH2itU)
 
 
